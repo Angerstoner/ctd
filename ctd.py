@@ -29,9 +29,12 @@ def parseData():
         if os.path.isfile(key + ".json"):
             with open(key + ".json", "r") as read_file:
                 data_object = json.loads(read_file.read())
-            data_object["data"].append(
-                {"date": parsed_data.group(1), "stauinhalt": parsed_data.group(2), "zufluss": parsed_data.group(3),
-                 "abfluss": parsed_data.group(4)})
+
+            append_data = {"date": parsed_data.group(1), "stauinhalt": parsed_data.group(2),
+                           "zufluss": parsed_data.group(3),
+                           "abfluss": parsed_data.group(4)}
+            if append_data not in data_object["data"]:
+                data_object["data"].append(append_data)
         else:
             data_object = {"name": key, "data": [
                 {"date": parsed_data.group(1), "stauinhalt": parsed_data.group(2), "zufluss": parsed_data.group(3),

@@ -1,5 +1,7 @@
 import requests
 import re
+import json
+import os.path
 
 datakeys = {
     "name": "talsperrenname",
@@ -19,13 +21,24 @@ datafiles = {
     "Soese": "http://talis.harzwasserwerke.de/talsperren/talis/soes_tab.txt"
 }
 
-parsedData = {
-}
 
 def parseData():
     for key in datafiles:
-        parsedData[key] = re.search('(.*)\r', requests.get(datafiles[key]).text).group(1)
-    print(parsedData)
+        parsed_data = re.search('(\d{2}\.\d{2}.\d{4} \d{2}:\d{2})\D+(\d+\.\d{3}),(\d\.\d{3}),(\d\.\d{3})\r',
+                                requests.get(datafiles[key]).text)
+        if os.path.isfile(key + ".json"):
+            with open(key + ".json", "r") as read_file:
+                data_object = json.loads(read_file.read())
+            data_object["data"].append(
+                {"date": parsed_data.group(1), "stauinhalt": parsed_data.group(2), "zufluss": parsed_data.group(3),
+                 "abfluss": parsed_data.group(4)})
+        else:
+            data_object = {"name": key, "data": [
+                {"date": parsed_data.group(1), "stauinhalt": parsed_data.group(2), "zufluss": parsed_data.group(3),
+                 "abfluss": parsed_data.group(4)}]}
+
+        with open(key + ".json", "w") as write_file:
+            json.dump(data_object, write_file)
 
 
 parseData()

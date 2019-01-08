@@ -2,7 +2,7 @@ import requests
 import re
 import json
 import os.path
-from datetime import datetime
+from datetime import datetime, timedelta
 
 datafiles = {
     "Ecker": "http://talis.harzwasserwerke.de/talsperren/talis/eck_tab.txt",
@@ -28,19 +28,28 @@ def unix_time_millis(dt):
     return int((dt - epoch).total_seconds() * 1000.0)
 
 
+def add_to_unix_millis(timestamp, daysToAdd):
+    orig = datetime.utcfromtimestamp(timestamp / 1000)
+    return int(unix_time_millis(orig + timedelta(days=daysToAdd)))
+
+
 def parse_data():
     for key in datafiles:
         print(key)
         raw_data = requests.get(datafiles[key]).text.splitlines()
         for line in raw_data:
-            if "24:" in line:
-                line = line.replace("24:", "00:")
-
             if line != "":
                 parsed_data = re.search('(\d{2}\.\d{2}.\d{4} \d{2}:\d{2})\D+(\d+\.\d{3}),(\d+\.\d{3}),(\d+\.\d{3})',
                                         line)
                 unformatted_date, stauinhalt, zufluss, abfluss = parsed_data.groups()
-                date = unix_time_millis(datetime.strptime(unformatted_date, '%d.%m.%Y %H:%M'))
+
+                if "24:" in unformatted_date:
+                    unformatted_date = unformatted_date.replace("24:", "00:")
+                    date = add_to_unix_millis(unix_time_millis(datetime.strptime(unformatted_date, '%d.%m.%Y %H:%M')),
+                                              1)
+                else:
+                    date = unix_time_millis(datetime.strptime(unformatted_date, '%d.%m.%Y %H:%M'))
+
                 fuellgrad = round(float(stauinhalt) / max_stau_data[key] * 100, 2)
 
                 if os.path.isfile("static/" + key + ".json"):

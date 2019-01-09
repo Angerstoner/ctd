@@ -35,7 +35,6 @@ def add_to_unix_millis(timestamp, daysToAdd):
 
 def parse_data():
     for key in datafiles:
-        print(key)
         raw_data = requests.get(datafiles[key]).text.splitlines()
         for line in raw_data:
             if line != "":
